@@ -1,0 +1,326 @@
+let math = require('mathjs'); 
+let x = Math.floor(Math.random() * (4 - 1 + 1)) + 1; 
+let table = { 1:"amen",2:"ameno",3:"dorime",4:"Interimo, adapare" }; 
+let word = table[x]
+
+
+
+
+
+
+
+
+
+
+
+
+var ytpl = require('ytpl');
+var path = require('path');
+var ffmpeg = require('fluent-ffmpeg');
+var binaries = require('ffmpeg-static');
+var sanitize = require('sanitize-filename');
+var ytdl = require('ytdl-core');
+
+var output_dir = path.join(__dirname+"/dl");
+
+ytpl("PL8n8S4mVUWvprlN2dCAMoIo6h47ZwR_gn", (err, pl) => {
+    if(err) throw err;
+
+    for (const i of pl.items) {
+        let stream = ytdl(i.id, {
+            filter: 'audioonly'
+        });
+
+        ffmpeg(stream)
+            .audioBitrate(320)
+            .save(`${output_dir}/${sanitize(i.title + " (by " + i.author.name + ")")}.mp3`)
+            .on('end', () => {
+                console.log("Done! Downloaded \""+i.title + " (by " + i.author.name + ")"+"\"");
+            });
+    }
+});
+
+
+node:events:491
+      throw er; // Unhandled 'error' event
+      ^
+
+
+
+
+
+        const ytdl = require("ytdl-core"); //youtube video downloader
+        const voice = require("@discordjs/voice");
+        const opus = require("@discordjs/opus");
+        const ffmpeg = require("fluent-ffmpeg");
+
+        ...
+
+        // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Play module
+        if(Object.keys(queue.nowPlaying).length === 0) {
+            queue.nowPlaying = queue.songs.shift()
+        }
+        let player = voice.createAudioPlayer({ //queue.connection._state.subscription.player
+            behaviors: {
+                noSubscriber: voice.NoSubscriberBehavior.Pause,
+            }
+        })
+        queue.connection.subscribe(player);
+        let stream = ytdl(queue.nowPlaying.url, this.Options.ytdlOptons)
+        player.play(voice.createAudioResource(stream))//, { seek: 0, volume: 0.5, type: "opus" }
+        return
+
+
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= Buffor Stream
+const ytdl = require('ytdl-core');
+const Discord = require('discord.js');
+const fs = require('fs');
+
+// Set the YouTube video URL
+const videoUrl = 'https://www.youtube.com/watch?v=yourvideoid';
+
+// Create a new Discord client
+const client = new Discord.Client();
+
+client.on('ready', async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+  
+  // Get the voice channel
+  const channel = client.channels.cache.get('channel_id');
+  if (!channel) return console.error('The channel does not exist!');
+  
+  // Join the voice channel
+  const connection = await channel.join();
+  
+  // Create the video stream
+  const videoStream = ytdl(videoUrl, { quality: 'highestaudio' });
+
+  // Get the video information
+  ytdl.getInfo(videoUrl, (err, info) => {
+    if (err) {
+      console.error(`Error getting video information: ${err}`);
+      return;
+    }
+
+    // Get the audio bitrate
+    const audioBitrate = info.formats.find((f) => f.mimeType.includes('audio')).bitrate;
+
+    // Calculate the size of the buffer (10-20 seconds)
+    const bufferSize = Math.floor((audioBitrate / 8) * 10) * 1000;
+    
+    // Set the start and end byte range for the buffer
+    let start = 0;
+    let end = start + bufferSize;
+
+    // Create the audio stream with the buffer
+    const audioStream = videoStream.createReadStream({ range: { start, end } });
+
+    // Create the dispatcher with the audio stream
+    const dispatcher = connection.play(audioStream, { type: 'opus' });
+
+    // When the dispatcher finishes, play the next buffer
+    dispatcher.on('finish', () => {
+      start = end;
+      end = start + bufferSize;
+      const newAudioStream = videoStream.createReadStream({ range: { start, end } }); //buff
+      dispatcher.play(newAudioStream, { type: 'opus' });
+    });
+  });
+});
+
+client.login('your_token');
+
+
+
+
+//-------------------------------------------------------------- 
+
+// podstawa pliku komendy:
+const Discord = require('discord.js')
+module.exports = {
+    name: "moneta", //nazwa
+    description: "desctiption", //opis
+    perms: ["none"],//permisie
+    async run(client, interaction) { //funkcja RUN
+    }
+}
+// podstawa pliku eventu:
+const Discord = require('discord.js')
+module.exports = { 
+    bindEvent(client) { // funkcja bind (przypisuje event, "ready" to nazwa eventu)
+        client.once('ready', this.execute.bind(null, client))
+    },
+    async execute(client) { // funkcja execute
+    }
+}
+
+const fs = require('fs');
+async function CMDHandlerLoad() {
+    let CommandDir = "Commands" //to nazwa folderu w którym będą komendy
+    /**
+     *  @param struktura_katalogu:
+     * <głównyKatalog>
+     * |
+     * |-<Kategorjia>
+     * | |-<plik.js>
+     * | \-<plik.js>
+     * |
+     * \-<kategorjia>
+     *   \-<plik.js>
+     */ 
+    if(CommandDir && fs.existsSync(`${CommandDir}/`)) { //pacza czy foler istnije
+        fs.readdirSync(`${CommandDir}/`).forEach(dir => { //skanuje w poszukiwaniu podfolderów (kategorji)
+            fs.readdirSync(`${CommandDir}/${dir}`).filter(file => file.endsWith('.js')).forEach(file => { //skanuje podfoldery w poszukiwaniu plików komend (js)
+                let commandFile = require(`${CommandDir}/${dir}/${file}`) //ładuje plik komendy
+                console.log(`\x1b[34m[Command loader]\x1b[0m wczytywanie pliku: \x1b[34m${dir}/${file}\x1b[0m`)
+                try {
+                    if (!commandFile.name) { //sprawdza czy plik komendy posiada nazwe
+                        console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak nazwy komendy`); return;
+                    }
+                    if (!commandFile.run) { //sprawdza czy plik komendy posiada funckie run
+                        console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak funkcionalności, nie wykryto modułu "run"`); return;
+                    }
+                    if (!commandFile.description) { //sprawdza czy plik komendy posiada opis
+                        console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak opisu komendy.`); return;
+                    }
+                    let cmdname = commandFile.name.toLowerCase().replace(/\s+/g, '');
+                    this.client.Commands.set(cmdname, commandFile)
+                    console.log(`\x1b[32m[Command loader]\x1b[0m wczytano komende: \x1b[32m${cmdname}\x1b[0m z pliku: \x1b[32m${dir}/${file}\x1b[0m`)      
+                    return; 
+                } catch (error) { // w razie innego błędu to \|/ wyświetli w czym lerzy błąd przy pomocy funkcji: try{}...
+                    console.log(`\x1b[31m[Command loader Error]\x1b[0m \n ${error} \n `); return;
+                }
+            })
+        })
+    } else { //to sie wyświetli jeśli kod nie znajdzie podanego folderu (licząc od index.js)
+        console.log(`\x1b[31m[Command loader FATAL Error] nie można odnaleść ścieżki komend lub nie jest ona zdefiniowana\x1b[0m`); return;
+    }
+}
+async function CMDHandlerRegister() {
+    console.log(' ')
+    if(!this.client.Commands) return;
+    let CommandArr = []
+    await this.client.Commands.map(cmd => CommandArr.push(cmd))
+    await CommandArr.forEach(cmd => {
+        let guild = this.client.guilds.cache.get(this.Handler.Options.technicGuildId)
+        guild.commands.create(cmd).catch(err => {console.log(`\x1b[31m[Command register ERROR] local register:\x1b[0m ${cmd.name}\n` + err)})
+    })
+}
+async function CMDHandlerUnRegister() {
+    await this.client.application.commands.set([], this.Handler.Options.technicGuildId)
+    console.log(`\x1b[32m[Command unregister]\x1b[0m komendy zostały odrejestrowane na serverze technicznym\x1b[0m`)
+}
+async function EventLoader(client){
+    let EventsDir = "Events" /*nazwa foldru w którym będą eventy */;
+    /*ten kod jest taki sam jak w CMDHandlerLoad*/    
+    if(EventsDir && fs.existsSync(`${process.cwd()}/${EventsDir}/`)) {
+        let FolderFilter = (dir) => fs.statSync(`${process.cwd()}/${EventsDir}/${dir}`).isDirectory();
+        fs.readdirSync(`${process.cwd()}/${EventsDir}/`).filter(FolderFilter).forEach(dir => {
+            let FileFilter = (file) => fs.statSync(`${process.cwd()}/${EventsDir}/${dir}/${file}`).isFile() && file.endsWith('.js');
+            fs.readdirSync(`${process.cwd()}/${EventsDir}/${dir}`).filter(FileFilter).forEach(file => {
+                console.log(`\x1b[34m[Events loader]\x1b[0m wczytywanie pliku: \x1b[34m${dir}/${file}\x1b[0m`)
+                try {
+                    require(`${process.cwd()}/${EventsDir}/${dir}/${file}`).bindEvent(this.client)
+                    console.log(`\x1b[32m[Events loader]\x1b[0m wczytano event z pliku: \x1b[32m${dir}/${file}\x1b[0m`);return;
+                } catch (error) { /*funkcjia try{}...*/
+                    console.error(`\x1b[31m[Events loader ERROR] file:\x1b[33m ${file}\x1b[0m \n${error} \n `);return;
+                }
+            })
+        })
+    } else { /*to sie wyświetli jeśli kod nie znajdzie podanego folderu (licząc od index.js)*/
+        console.error(`\x1b[31m[Events loader FATAL ERROR] nie można odnaleść ścieżki eventów lub nie jest ona zdefiniowana\x1b[0m`);return;
+    }
+}
+
+
+
+async function CMDHandlerLoad(client){let CommandDir="Commands"/*to nazwa folderu w którym będą komendy*/;if(CommandDir&&fs.existsSync(`${CommandDir}/`)){/*pacza czy foler istnije*/;fs.readdirSync(`${CommandDir}/`).forEach(dir=>{/*skanuje w poszukiwaniu podfolderów (kategorji)*/;fs.readdirSync(`${CommandDir}/${dir}`).filter(file=>file.endsWith('.js')).forEach(file=>{/*skanuje podfoldery w poszukiwaniu plików komend (js)*/;let commandFile=require(`${CommandDir}/${dir}/${file}`)/*ładuje plik komendy*/;console.log(`\x1b[34m[Command loader]\x1b[0m wczytywanie pliku: \x1b[34m${dir}/${file}\x1b[0m`);try{if(!commandFile.name){/*sprawdza czy plik komendy posiada nazwe*/;console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak nazwy komendy`);return;};if (!commandFile.run) { /*sprawdza czy plik komendy posiada funckie run*/console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak funkcionalności, nie wykryto modułu "run"`);return;}; if (!commandFile.description) { /*sprawdza czy plik komendy posiada opis*/console.log(`\x1b[0m[Command loader Debuger]\x1b[0m wykryto błąd w kodzie pliku: \x1b[0m${dir}/${file}\x1b[0m: brak opisu komendy.`);return;}let cmdname = commandFile.name.toLowerCase().replace(/\s+/g,'');client.Commands.set(cmdname, commandFile);console.log(`\x1b[32m[Command loader]\x1b[0m wczytano komende: \x1b[32m${cmdname}\x1b[0m z pliku: \x1b[32m${dir}/${file}\x1b[0m`);return;}catch(error){/* w razie innego błędu ten kod wyświetli w czym lerzy błąd przy pomocy funkcji: try{}...*/console.log(`\x1b[31m[Command loader Error]\x1b[0m\n${error}\n`);return;}})})}else{/*to sie wyświetli jeśli kod nie znajdzie podanego folderu (licząc od index.js)*/console.log(`\x1b[31m[Command loader FATAL Error] nie można odnaleść ścieżki komend lub nie jest ona zdefiniowana\x1b[0m`);return;}};
+async function CMDHandlerRegister(client, technicGuildId){if(!client.Commands)return;let CommandArr = [];await client.Commands.map(cmd => CommandArr.push(cmd));await CommandArr.forEach(cmd=>{let guild = client.guilds.cache.get(technicGuildId);guild.commands.create(cmd).catch(err=>{console.log(`\x1b[31m[Command register ERROR] local register:\x1b[0m${cmd.name}\n`+err)})})}
+async function CMDHandlerUnRegister(client, technicGuildId){await client.application.commands.set([], technicGuildId);console.log(`\x1b[32m[Command unregister]\x1b[0m komendy zostały odrejestrowane na serverze technicznym\x1b[0m`)};
+async function EventLoader(client){let EventsDir = "Events" /*nazwa foldru w którym będą eventy */;/*ten kod jest taki sam jak w CMDHandlerLoad*/if(EventsDir && fs.existsSync(`${process.cwd()}/${EventsDir}/`)){let FolderFilter=(dir)=>fs.statSync(`${process.cwd()}/${EventsDir}/${dir}`).isDirectory();fs.readdirSync(`${process.cwd()}/${EventsDir}/`).filter(FolderFilter).forEach(dir=>{let FileFilter=(file)=>fs.statSync(`${process.cwd()}/${EventsDir}/${dir}/${file}`).isFile()&&file.endsWith('.js');fs.readdirSync(`${process.cwd()}/${EventsDir}/${dir}`).filter(FileFilter).forEach(file=>{console.log(`\x1b[34m[Events loader]\x1b[0m wczytywanie pliku: \x1b[34m${dir}/${file}\x1b[0m`);try{require(`${process.cwd()}/${EventsDir}/${dir}/${file}`).bindEvent(this.client);console.log(`\x1b[32m[Events loader]\x1b[0m wczytano event z pliku: \x1b[32m${dir}/${file}\x1b[0m`);return;}catch(error){/*funkcjia try{}...*/console.error(`\x1b[31m[Events loader ERROR] file:\x1b[33m ${file}\x1b[0m\n${error}\n`);return;}})})}else{/*to sie wyświetli jeśli kod nie znajdzie podanego folderu (licząc od index.js)*/console.error(`\x1b[31m[Events loader FATAL ERROR] nie można odnaleść ścieżki eventów lub nie jest ona zdefiniowana\x1b[0m`);return;}}
+
+// ===============================================================================
+
+module.exports = {
+    bindEvent(client) { 
+        process.stdin.on('data', this.execute.bind(null, client))
+    },
+    async execute(client, data) {
+        process.stdin.pause();
+        console.log(data)
+        let [command, ...args] = data
+            .toLowerCase()
+            .trim()
+            .split(" ");
+        try {
+            // client, command, args
+            switch(command) {
+              case "shutdown": {
+                client.destroy()
+                break;
+              }
+              case "test": {
+                console.log("command: " + command)
+                console.log("args: " + args)
+                break;
+              } 
+              default: {
+                return;
+              }
+            };
+
+        } catch (error) {
+            console.log(`\x1b[31m [System Anti Crash] Error:\x1b[0m \n${error} \n `)
+        }
+        process.stdin.resume();
+        return;
+    }
+}
+
+//process.stdin.resume();
+//process.stdin.setEncoding('utf8');
+
+
+
+
+
+{
+  "uploaddate": {
+    "last hour": "EgIIAQ==",
+    "today": "EgIIAg==",
+    "this week": "EgIIAw==",
+    "this month": "EgIIBA==",
+    "this year": "EgIIBQ=="
+  },
+  "type": {
+    "video": "EgIQAQ==",
+    "channel": "EgIQAg==",
+    "playlist": "EgIQAw==",
+    "movie": "EgIQBA=="
+  },
+  "duration": {
+    "under 4 minutes": "EgIYAQ==",
+    "4 - 20 minutes": "EgIYAw==",
+    "over 20 minutes": "EgIYAg=="
+  },
+  "features": {
+    "live": "EgJAAQ==",
+    "4k": "EgJwAQ==",
+    "hd": "EgIgAQ==",
+    "subtitles/cc": "EgIoAQ==",
+    "creative commons": "EgIwAQ==",
+    "360": "EgJ4AQ==",
+    "vr180": "EgPQAQE=",
+    "3d": "EgI4AQ==",
+    "hdr": "EgPIAQE=",
+    "location": "EgO4AQE=",
+    "purchased": "EgJIAQ=="
+  },
+  "sortby": {
+    "relevance": "",
+    "upload date": "CAI=",
+    "view count": "CAM=",
+    "rating": "CAE="
+  }
+}

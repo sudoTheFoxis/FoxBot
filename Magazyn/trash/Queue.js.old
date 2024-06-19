@@ -1,0 +1,137 @@
+const ytdl = require("ytdl-core")
+const ffmpeg = require("fluent-ffmpeg")
+const voice = require('@discordjs/voice')
+
+module.exports = class Queue {
+    #FMP
+    constructor(FMP) {
+        this.#FMP = FMP
+        // basic parameters
+        this.connection = undefined     // connection with the discord voice channel
+        this.VC = undefined             // voicechannel
+        this.TC = undefined             // textchannel
+        // songs
+        this.songs = []                 // all queued songs
+        this.nowPlaying = {}            // current song that is playing right now
+        this.cache = {}                 // previously played song
+        // stream
+        this.PlayerCache = {}
+        this._filters = []              // all active Filters
+        this._paused = false            // is paused? Boolean (true/false)
+        this._loop = 0                  // loop mode 0-disabled, 1-queue, 3-song
+        this._volume = 100              // volume
+        this._startTime = 0             // the start sime of the song
+    }
+    async createPlayer() {
+        if(!this.connection) { 
+            this.connection = voice.joinVoiceChannel({
+                channelId: this.VC.id,
+                guildId: this.VC.guild.id,
+                adapterCreator: this.VC.guild.voiceAdapterCreator,
+                selfDeaf: false,
+                selfMute: false
+        })}
+        let player = this.connection._state.subscription?.player
+        if(this.PlayerCache.ffmpegStream) await this.PlayerCache.ffmpegStream.kill(); //'SIGKILL'
+        this.PlayerCache.ffmpegStream = undefined;
+        if(this.PlayerCache.audioResource) await this.PlayerCache.audioResource.destroy()
+        this.PlayerCache.audioResource = undefined;
+        if(player) await player.stop(); 
+        this.PlayerCache.audioPlayer = undefined;
+        this.PlayerCache = {}
+
+        console.log("started playing song from url: " + this.nowPlaying.url)
+        this.PlayerCache.stream = ytdl(this.nowPlaying.url, { quality: 'highestaudio', filter: 'audioonly' })
+            .on("error", (err) => {
+                //console.log("===== ytdl error:\n", err);
+            });
+        let vollvl = (this._volume / 100).toFixed(2) 
+        console.log(vollvl)
+        this.PlayerCache.ffmpegStream = ffmpeg({ source: this.PlayerCache.stream, priority: 5 })
+            .noVideo()  
+            .audioChannels(2)
+            .audioBitrate(this.VC.bitrate)
+            .setStartTime(this._startTime, `volume='${vollvl}'`) //.seek(60)
+            .audioFilters(this._filters)
+            .format("s16le") // Raw
+            //.format('opus') // Arbitrary
+            //.audioCodec('opus')
+            //.audioFrequency(48000)
+            .on('error', error => console.log(`[FFmpeg] Encoding Error: ${error.message}`))
+            .on('exit', () => console.log('[FFmpeg] Video recorder exited'))
+            .on('close',  () => console.log('[FFmpeg] Video recorder closed'))
+            .on('end', () => console.log('[FFmpeg] Video Transcoding succeeded !'))
+        this.PlayerCache.audioResource = voice.createAudioResource(this.PlayerCache.ffmpegStream, { inputType: voice.StreamType.Raw }) //, { inputType: voice.StreamType.Arbitrary, inlineVolume: false }
+        this.PlayerCache.audioPlayer = voice.createAudioPlayer({
+            behaviors: {
+                noSubscriber: voice.NoSubscriberBehavior.Pause,
+            },
+        })
+            .on("error", err => {
+                //console.log("===== audio player error:\n" + err )
+            });
+        this.connection.subscribe(this.PlayerCache.audioPlayer);
+        this.PlayerCache.audioPlayer.play(this.PlayerCache.audioResource);
+        /*
+        if (this._paused) { 
+            this.PlayerCache.audioPlayer.pause() 
+        } else { 
+            this.PlayerCache.audioPlayer.unpause() 
+        }*/
+    }
+    async play() {
+        if (!this.nowPlaying) {
+            if (this.songs.length <= 0) return console.log("nie ma żadnej muzyki do odtworzenia");
+            this.nowPlaying = this.songs.shift()
+        }
+        this.createPlayer()
+    }
+    async stop() {
+        // destroy queue
+        this.nowPlaying = {}
+        if(this.PlayerCache.ffmpegStream) await this.PlayerCache.ffmpegStream.kill(); //'SIGKILL'
+        this.PlayerCache.ffmpegStream = undefined;
+        if(this.PlayerCache.audioResource) await this.PlayerCache.audioResource.destroy()
+        this.PlayerCache.audioResource = undefined;
+        if(this.PlayerCache.audioPlayer) await this.PlayerCache.audioPlayer.stop()
+        this.PlayerCache.audioPlayer = undefined
+        this.PlayerCache = {}
+    }
+    async pause() {
+        this._paused = true
+        this.PlayerCache.audioPlayer.pause()
+    }
+    async resume() {
+        this._paused = false;
+        this.PlayerCache.audioPlayer.unpause()
+    }
+    async volume(lvl) {
+        this._volume = lvl
+        this.createPlayer()
+    }
+    async seek(time) {
+        // if number ( 10 ) seek (move the time forward or backward 10sek/-10sek ) 
+        // if string (12:54) conwert to seconds and jump (play the song from 12:54)
+        // if song has been seeked out of ther duration, player will emit hte song end event
+        // if song has been seeket before ther duration, player will play the song from start (00:00)
+        let currentTime = (this.PlayerCache.audioResource?.playbackDuration ?? 0) / 1000 + this._startTime;
+        this._startTime = currentTime + time
+        this.createPlayer()
+    }
+    async filters() {
+
+    }
+    
+}
+/*
+    get loop() {return this._loop}
+    set loop(mode) {this._loop = mode}
+    get paused() { return this._paused }
+    set paused(mode) { this._paused = mode }
+    get volume() {return this._volume}   
+    set volume(lvl) {this._volume = lvl}
+    get filters() {return this._filters}
+    set filters(filters) {this._filters = filters}
+
+
+*/

@@ -1,0 +1,66 @@
+const ytdl = require('ytdl-core');
+const { createAudioPlayer, createAudioResource, AudioPlayerStatus, NoSubscriberBehavior, StreamType } = require('@discordjs/voice');
+const ffmpeg = require('fluent-ffmpeg');
+
+module.exports = class PlayerManager {
+    constructor(FMP) {
+        this.FMP = FMP;
+        this.filters = {
+            "bassboost": "bass=g=8,dynaudnorm=f=200,volume=2",
+            "HyperBass": "bass=g=25,dynaudnorm=f=300,volume=3",
+            "vaporwave": "aresample=48000,asetrate=48000*0.8",
+            "nightcore": "aresample=48000,asetrate=48000*1.25",
+            "8d": "apulsator=hz=0.08"
+        }
+    }
+    async playMusic(url, connection) {
+        let seekTime = 35;
+        let filters = [
+          //"apulsator=hz=0.08"
+          //"bass=g=25,dynaudnorm=f=300,volume=3"
+        ]
+
+        const stream = ytdl(url, { filter: 'audioonly', quality: 'highestaudio', opusEncoded: true, highWaterMark: 1 << 25 });
+        
+        // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ffmpeg
+        const ffmpegProcess = ffmpeg(stream)
+          .noVideo()  
+          .setStartTime(seekTime)
+          //.seek(seekTime)
+          .format('opus')
+          .audioCodec('opus') 
+          .audioChannels(2)
+          //.audioFrequency(48000)
+          .audioBitrate(128)
+          .audioFilters(filters)
+          //.format('s16le') //very High Quality
+          //.format('mp3')
+          .on('error', (err) => {
+            console.error(err);
+            ffmpegProcess.kill();
+        });
+
+        // Tworzenie AudioResource i AudioPlayer
+        //const audioResource = createAudioResource(ffmpegProcess.output());
+        const audioResource = createAudioResource(ffmpegProcess.pipe(), { type: "opus", inlineVolume: true, bitrate: 128 })
+        const audioPlayer = createAudioPlayer({ //queue.connection._state.subscription.player
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Pause,
+          }
+        });
+        
+        // Łączenie z kanałem głosowym i odtwarzanie muzyki
+        connection.subscribe(audioPlayer);
+        audioPlayer.play(audioResource);
+        
+        // Oczekiwanie na zakończenie odtwarzania muzyki lub przewijanie muzyki
+        await new Promise((resolve, reject) => {
+          audioPlayer.on(AudioPlayerStatus.Idle, () => {
+            resolve();
+          });
+          audioPlayer.on('error', (err) => {
+            reject(err);
+          });
+        });
+    }
+}

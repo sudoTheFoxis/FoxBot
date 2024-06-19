@@ -1,0 +1,139 @@
+====================================================================================================
+====< FoxMusicPlayer, an simple but advanced music player based on DisTube >========================
+====================================================================================================
+
+====================================================================================================
+====< File Structure >==============================================================================
+====================================================================================================
+FMP-V2
+|- FoxMusicPlayer.js    // main file of the player, contain all functionality.
+|- QueueManager.js      // manages all queues.
+|- modules
+|   |- Queue.js             // contain all variables and allows easy control over the single server queue.
+|   |- PlayerManager.js     // the main music player. 
+|   |- StreamManager.js     // creates once for song stream to avoid event overlapping.
+|   \- FilterManager.js     // cooperates with StreamManager.js, helping to easy manage ffmpeg filters.
+|- SearchEngine
+|   |- SearchEngine.js  // advanced search engine 
+|   |- Youtube.js       // search engine integration for YouTube
+|   |- Spotify.js       // search engine integration for Spotify
+|   \- SounCloud.js     // search engine integration for SoundClound
+|- utilities
+|   |- ErrorHandler.js  // translate codes to error messages 
+|   |- InfoHandler.js   // translate codes to info messages
+|   |- utilities.js     // some utulities
+|   |- color.js         // support for colored text in console
+|   \- validate.js      // validate FMP options
+\- other
+    |- srtucture.txt    // this file, blueprint with information about structure and functionality of the package
+    \- unused-code.js   // saved code that is unnecessary for now
+
+
+
+====================================================================================================
+====< FMP Options Structure >=======================================================================
+====================================================================================================
+{
+    // comon options
+    selfRecovery: true,         // after stream crash, renewing the same song in exact time (can take some time to recovery)
+    maxSelfRecovery: 3,         // the number of maximum self-retrieval attempts, beyond which the music will be skipped
+    displayErrors: false,       // show all errors on console
+    displayDebugInfo: false,    // log all FMP actions
+    joinAsDeaf: false,
+    
+    // queue
+    pauseWhenEmpty: true,           // pause music when there is noone in vc except the bot
+    leaveWhenEmpty: true,           // leave when there is noone in vc except the bot
+    leaveWhenEmptyDelay: 30,        //time in seconds
+    clearQueueWhenEmpty: false,     // delete queue when there is no one in vc except the bot
+    clearQueueWhenEmptyDelay: 60,   //time in seconds
+    leaveOnEnd: false,              // leave from vc if queue is end
+    leaveOnEndDelay: 30,            // time in seconds
+    leaveWhenPaused: false,         // leave from vc if music is paused
+    leaveWhenPausedDelay: 60,       //time in seconds    
+
+    // ytdl settings
+    ytdlOptions: {
+        filter: "audioonly",
+        quality: "highestaudio",
+        highWaterMark: 1 << 25
+    },
+
+    // default filter tabble
+    FilterList: {
+        "vaporwave": "asetrate=48000*0.8,aresample=48000,atempo=1.1",   // slow down the music
+        "nightcore": "asetrate=48000*1.25,aresample=48000,bass=g=5",   // very fast song
+        "purebass": "bass=g=40,dynaudnorm=f=300,asubboost,volume=2",  // almost bass only
+        "bassboost": "bass=g=10,dynaudnorm=f=200",          // small boost to the bass
+        "HyperBass": "bass=g=20,dynaudnorm=f=250",         // medium boost to the bass
+        "karaoke": "stereotools=mlev=0.1",        // like deff music with echo
+        "echo": "aecho=0.8:0.9:1000:0.3",        // trash
+        "8d": "apulsator=hz=0.10",        // sound around us
+        "mcompand": "mcompand",        // something like bad speaker with little echo
+        "reverse": "areverse",        // first downloading entire song then reversing it (funny XD)
+        "flanger": "flanger",        // like 8d
+        "tremolo": "tremolo",      // volume up and down very fast
+        "phaser": "aphaser",      // like lineal
+        "earwax": "earwax",      // deff sound
+        "haas": "haas",      // inverse
+    },
+}
+
+
+
+====================================================================================================
+=====< Queue Structure >============================================================================
+====================================================================================================
+{
+    #FMP = FMP 
+    // basic required informations to play music
+    TC,                 // TextChannel
+    VC,                 // VoiceChannel
+    connection,         // Connection
+
+    // information about the queue songs
+    songs: [],          // list of queued songs
+    nowPlaying: {},     // now playing song
+    cache: {},          // previously played song
+
+    // the options of player
+    _volume: 100,
+    _startTime: 0,
+    _paused: false,
+    _loop: 0
+}
+
+
+
+====================================================================================================
+====< Guild Structure >=============================================================================
+====================================================================================================
+Guild {
+    // 
+    TC
+    VC
+    connection
+
+    // grand guild's player settings
+    settings = {
+        volume: 100,
+        startTime: 0,
+        paused: false,
+        loop: 0
+    }
+    // queues
+    current = "example1"
+    Queues = { // new Map()
+        "example1" = {
+            songs: [],
+            nowPlaying: {},
+            cache: {},
+            settings: {
+                volume: 100,
+                startTime: 0,
+                paused: false,
+                loop: 0
+            }
+        }
+    }
+}

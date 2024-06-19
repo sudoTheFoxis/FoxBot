@@ -1,0 +1,24 @@
+{
+  "name": "foxbot",
+  "version": "1.0.0",
+  "description": "my custom discord bot",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "devwatch": "nodemon index.js"
+  },
+  "author": "thefoxis",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/voice": "^0.16.1",
+    "@distube/ytdl-core": "^4.13.3",
+    "@distube/ytpl": "^1.2.1",
+    "@distube/ytsr": "^1.2.0",
+    "discord.js": "^14.14.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "libsodium-wrappers": "^0.7.13",
+    "mathjs": "^12.0.0",
+    "nodemon": "^3.0.1",
+    "opusscript": "^0.0.8"
+  }
+}

@@ -1,0 +1,37 @@
+
+console.log('\x1b[36m%s\x1b[0m', 'I am cyan');  //cyan
+console.log('\x1b[33m%s\x1b[0m', stringToMakeYellow);  //yellow
+
+Note '%s' is where in the string (the second argument) gets injected. 
+\x1b[0m resets the terminal color so it doesn't continue to be 
+the chosen color anymore after this point.
+
+space = %s                  FgBlack = \x1b[30m          BgBlack = \x1b[40m
+Reset = \x1b[0m             FgRed = \x1b[31m            BgRed = \x1b[41m
+Bright = \x1b[1m            FgGreen = \x1b[32m          BgGreen = \x1b[42m
+Dim = \x1b[2m               FgYellow = \x1b[33m         BgYellow = \x1b[43m
+Underscore = \x1b[4m        FgBlue = \x1b[34m           BgBlue = \x1b[44m
+Blink = \x1b[5m             FgMagenta = \x1b[35m        BgMagenta = \x1b[45m
+Reverse = \x1b[7m           FgCyan = \x1b[36m           BgCyan = \x1b[46m
+Hidden = \x1b[8m            FgWhite = \x1b[37m          BgWhite = \x1b[47m
+
+
+📕: error message
+📙: warning message
+📗: ok status message
+📘: action message
+📓: canceled status message
+📔: or anything you like and want to recognize immediately by color
+
+================================================================
+To reset attributes: \x1b[0m
+
+\x1b[1;30m \x1b[0;30m \x1b[1;30;40m
+\x1b[1;31m \x1b[0;31m \x1b[1;31;41m
+\x1b[1;32m \x1b[0;32m \x1b[1;32;42m
+\x1b[1;33m \x1b[0;33m \x1b[1;33;43m
+\x1b[1;34m \x1b[0;34m \x1b[1;34;44m
+\x1b[1;35m \x1b[0;35m \x1b[1;35;45m
+\x1b[1;36m \x1b[0;36m \x1b[1;36;46m
+\x1b[1;37m \x1b[0;37m \x1b[1;37;47m
+================================================================

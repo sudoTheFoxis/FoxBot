@@ -1,0 +1,115 @@
+const fs = require('fs');
+const path = require('path');
+
+class DataHandler {
+    constructor() {
+        this.baseDir = './DataBase';
+        if (!fs.existsSync(this.baseDir)) {
+            fs.mkdirSync(this.baseDir);
+        }
+
+        const cleanup = async () => {
+            console.log('[DataHandler] Czyszczenie folderu ./DataBase/TEMP...');
+            await this.cleanup();
+            process.exit();
+        };
+        process.on('SIGINT', cleanup);
+        process.on('SIGTERM', cleanup);
+        process.on('beforeExit', cleanup);
+    }
+    cleanup() {
+        if (fs.existsSync(`${this.baseDir}/TEMP`)) {
+        fs.readdirSync(`${this.baseDir}/TEMP`).forEach((file) => {
+            const currentPath = path.join(`${this.baseDir}/TEMP`, file);
+            if (fs.lstatSync(currentPath).isDirectory()) {
+                this.removeFolderRecursive(currentPath);
+            } else {
+                fs.unlinkSync(currentPath);
+            }
+        });
+        //fs.rmdirSync(`${this.baseDir}/TEMP`);
+        }
+    }
+
+    create(category, id, object) {
+        const filePath = path.join(this.baseDir, category, `${id}.json`);
+        const data = JSON.stringify(object, null, 2);
+    
+        try {
+        if (fs.existsSync(filePath)) {
+            // Jeśli plik już istnieje, wczytaj jego zawartość
+            const existingData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            // Połącz istniejące dane z nowymi danymi
+            const mergedData = { ...existingData, ...object };
+            const mergedDataString = JSON.stringify(mergedData, null, 2);
+            // Zapisz zaktualizowane dane do pliku
+            fs.writeFileSync(filePath, mergedDataString);
+        } else {
+            // Jeśli plik nie istnieje, stwórz nowy
+            fs.mkdirSync(path.join(this.baseDir, category), { recursive: true });
+            fs.writeFileSync(filePath, data);
+        }
+    
+        return true;
+        } catch (error) {
+        return false;
+        }
+    }
+
+    delete(id) {
+        const fileToDelete = this.findFile(id);
+        if (fileToDelete) {
+        try {
+            fs.unlinkSync(fileToDelete);
+            return false;
+        } catch (error) {
+            return true;
+        }
+        }
+        return false;
+    }
+
+    get(id) {
+        const fileToRead = this.findFile(id);
+        if (fileToRead) {
+        try {
+            const fileData = fs.readFileSync(fileToRead, 'utf8');
+            const result = JSON.parse(fileData);
+            return result;
+        } catch (error) {
+            return null;
+        }
+        }
+        return null;
+    }
+    edit(id, updatedFields) {
+        const fileToEdit = this.findFile(id);
+        if (fileToEdit) {
+        try {
+            const fileData = fs.readFileSync(fileToEdit, 'utf8');
+            const existingData = JSON.parse(fileData);
+            const updatedData = { ...existingData, ...updatedFields };
+            const updatedDataString = JSON.stringify(updatedData, null, 2);
+            fs.writeFileSync(fileToEdit, updatedDataString);
+            return false;
+        } catch (error) {
+            return true;
+        }
+        }
+        return false;
+    }
+    findFile(id) {
+        const categories = fs.readdirSync(this.baseDir);
+        for (const category of categories) {
+        const files = fs.readdirSync(path.join(this.baseDir, category));
+        for (const file of files) {
+            if (file === `${id}.json`) {
+            return path.join(this.baseDir, category, file);
+            }
+        }
+        }
+        return null;
+    }
+}
+
+module.exports = DataHandler;
